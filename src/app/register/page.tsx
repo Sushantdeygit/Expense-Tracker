@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, Mail, User, UserPlus } from "lucide-react";
 
@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 export default function Register() {
   const [form, setForm] = useState({ fullName: "", email: "", password: "" });
@@ -30,7 +31,9 @@ export default function Register() {
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   // Password strength calculation
   const calculatePasswordStrength = (password: string): number => {
@@ -110,7 +113,7 @@ export default function Register() {
         // Redirect to login page after a short delay
         setTimeout(() => {
           router.push("/login");
-        }, 2000);
+        }, 1000);
       } else {
         setMessage({
           type: "error",
@@ -127,6 +130,14 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      setAuth(true);
+      router.push("/");
+    }
+  }, [router, setAuth]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
@@ -307,7 +318,7 @@ export default function Register() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <div className="relative flex justify-center text-xs uppercase">
+          {/* <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
               Or continue with
             </span>
@@ -320,7 +331,7 @@ export default function Register() {
             <Button variant="outline" className="w-full">
               GitHub
             </Button>
-          </div>
+          </div> */}
           <div className="text-center text-sm">
             Already have an account?{" "}
             <Button

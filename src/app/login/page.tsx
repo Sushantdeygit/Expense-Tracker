@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
 
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -27,11 +28,14 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
 
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const isAuth = useAuthStore((state) => state.isAuth);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Basic validation
+    // ✅ Basic validation
     if (!form.email || !form.password) {
       setError("Please fill in all fields");
       return;
@@ -42,28 +46,41 @@ export default function Login() {
     try {
       const res = await fetch("/api/login", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(form),
       });
 
       const data = await res.json();
 
-      if (data.userId) {
+      if (res.ok) {
+        setAuth(true);
         localStorage.setItem("userId", data.userId);
+
         if (rememberMe) {
-          // In a real app, you might use a more secure method
           localStorage.setItem("rememberUser", form.email);
         }
-        router.push("/dashboard");
+
+        router.push("/");
       } else {
         setError(data.error || "Login failed. Please check your credentials.");
       }
     } catch (err) {
+      console.log("Login error:", err);
       setError("An error occurred. Please try again.");
-      console.log("Error in logging in", err);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      setAuth(true);
+      router.push("/");
+    }
+  }, [router, setAuth]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
