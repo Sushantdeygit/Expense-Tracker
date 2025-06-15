@@ -106,6 +106,43 @@ export default function Home() {
     setAmount("");
   };
 
+  function exportToCSV(expenses: Expense[]) {
+    if (!expenses.length) return;
+
+    const excludedFields = [
+      "_id",
+      "user",
+      "direction",
+      "createdAt",
+      "updatedAt",
+      "__v",
+    ];
+
+    // Get headers excluding unwanted fields
+    const headers = Object.keys(expenses[0]).filter(
+      (key) => !excludedFields.includes(key)
+    );
+
+    // Construct CSV rows
+    const rows = expenses.map((exp) =>
+      headers.map((header) => exp[header as keyof Expense])
+    );
+
+    const csvContent = [
+      headers.join(","), // header row
+      ...rows.map((row) => row.join(",")), // data rows
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "allowance.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // Prepare chart data - group expenses by date
   const chartData = expenses.reduce((acc: any[], expense: Expense) => {
     const date = new Date(expense.date).toLocaleDateString("en-US", {
@@ -140,9 +177,9 @@ export default function Home() {
           <h1 className="text-3xl font-bold tracking-tight">
             Travel Allowance Tracker
           </h1>
-          <Button size="sm">
+          <Button size="sm" onClick={() => exportToCSV(expenses)}>
             <WalletIcon className="mr-2 h-4 w-4" />
-            Set Budget
+            Export CSV
           </Button>
         </div>
 
